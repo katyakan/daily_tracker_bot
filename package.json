@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "telegraf": "^4.12.3",
-    "better-sqlite3": "^8.0.1",
+    "better-sqlite3": "^11.3.0",
     "dayjs": "^1.11.9",
     "dotenv": "^16.0.3"
   },
@@ -19,3 +19,4 @@
     "nodemon": "^3.0.1"
   }
 }
+
