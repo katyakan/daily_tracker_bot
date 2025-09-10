@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const DB_PATH = process.env.DB_PATH || './data/tracker.db';
+
+// Создаём папку data, если её нет
+mkdirSync(dirname(DB_PATH), { recursive: true });
+
 const db = new Database(DB_PATH);
 
 db.exec(`
