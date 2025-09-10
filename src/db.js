@@ -1,14 +1,14 @@
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
-import { mkdirSync } from 'fs';
-import { dirname } from 'path';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
 const DB_PATH = process.env.DB_PATH || './data/tracker.db';
 
 // Создаём папку data, если её нет
-mkdirSync(dirname(DB_PATH), { recursive: true });
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new Database(DB_PATH);
 
@@ -46,3 +46,4 @@ CREATE TABLE IF NOT EXISTS career (
 `);
 
 export default db;
+
