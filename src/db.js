@@ -1,5 +1,8 @@
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
+import { mkdirSync } from 'fs';
+import { dirname } from 'path';
+
 dotenv.config();
 
 const DB_PATH = process.env.DB_PATH || './data/tracker.db';
