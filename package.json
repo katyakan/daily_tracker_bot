@@ -2,6 +2,9 @@
   "name": "telegram-goals-tracker",
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "node src/bot.js",
     "dev": "nodemon src/bot.js"
