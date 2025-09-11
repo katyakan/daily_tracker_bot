@@ -46,8 +46,10 @@ const HELP_TEXT = `
 /month — за месяц
 
 🎯 Цели:
-• цель golang 100 — установить цель
-• goals — просмотр активных целей
+• цель калории 1500 — цель по калориям
+• цель golang 100 — цель по занятиям
+• цель отклик 10 — цель по откликам
+• /goals — просмотр активных целей
 `;
 
 // Commands
@@ -59,7 +61,13 @@ bot.hears(/^\s*калории\s+(\d+)\s*$/i, ctx => {
   const chatId = String(ctx.chat.id);
   const kcal = Number(ctx.match[1]);
   caloriesSrv.addIntake(chatId, today(), kcal);
-  ctx.reply(`🍏 Добавлено ${kcal} ккал (приём)`);
+  
+  const goalCheck = goalsSrv.checkAndCompleteGoal(chatId, 'калории');
+  if (goalCheck?.completed) {
+    ctx.reply(`🍏 Добавлено ${kcal} ккал\n\n🎉 ЦЕЛЬ ДОСТИГНУТА! Калории — ${goalCheck.target} ккал!`);
+  } else {
+    ctx.reply(`🍏 Добавлено ${kcal} ккал`);
+  }
 });
 
 bot.hears(/^\s*занятия\s+(\d+)\s*$/i, ctx => {
@@ -84,14 +92,28 @@ bot.hears(/^\s*(отклик|ответ|собес)\s+(.+)$/i, ctx => {
   ctx.reply(`💼 Записано: ${type} — ${company}`);
 });
 
-// Парсер для целей: "цель golang 100"
+// Парсеры для разных типов целей
+bot.hears(/^\s*цель\s+калории\s+(\d+)\s*$/i, ctx => {
+  const chatId = String(ctx.chat.id);
+  const target = Number(ctx.match[1]);
+  goalsSrv.setGoal(chatId, 'калории', '', target);
+  ctx.reply(`🎯 Цель: калории — ${target} ккал`);
+});
+
+bot.hears(/^\s*цель\s+(отклик|ответ|собес)\s+(\d+)\s*$/i, ctx => {
+  const chatId = String(ctx.chat.id);
+  const activity = ctx.match[1];
+  const target = Number(ctx.match[2]);
+  goalsSrv.setGoal(chatId, 'карьера', activity, target);
+  ctx.reply(`🎯 Цель: ${activity} — ${target} раз`);
+});
+
 bot.hears(/^\s*цель\s+(\w+)\s+(\d+)\s*$/i, ctx => {
   const chatId = String(ctx.chat.id);
-  const activity = ctx.match[1].toLowerCase();
+  const activity = ctx.match[1];
   const target = Number(ctx.match[2]);
-  
-  goalsSrv.setGoal(chatId, activity, target);
-  ctx.reply(`🎯 Новая цель: ${activity} — ${target} минут`);
+  goalsSrv.setGoal(chatId, 'активности', activity, target);
+  ctx.reply(`🎯 Цель: ${activity} — ${target} минут`);
 });
 
 // Обновляем парсер активностей - проверяем цели
@@ -112,6 +134,35 @@ bot.hears(/^\s*(\w+)\s+(\d+)\s*$/i, ctx => {
   }
 });
 
+// Обновляем парсер калорий - проверяем цели
+bot.hears(/^\s*калории\s+(\d+)\s*$/i, ctx => {
+  const chatId = String(ctx.chat.id);
+  const kcal = Number(ctx.match[1]);
+  caloriesSrv.addIntake(chatId, today(), kcal);
+  
+  const goalCheck = goalsSrv.checkAndCompleteGoal(chatId, 'калории');
+  if (goalCheck?.completed) {
+    ctx.reply(`🍏 Добавлено ${kcal} ккал\n\n🎉 ЦЕЛЬ ДОСТИГНУТА! Калории — ${goalCheck.target} ккал!`);
+  } else {
+    ctx.reply(`🍏 Добавлено ${kcal} ккал`);
+  }
+});
+
+// Обновляем парсер карьеры - проверяем цели
+bot.hears(/^\s*(отклик|ответ|собес)\s+(.+)$/i, ctx => {
+  const chatId = String(ctx.chat.id);
+  const type = ctx.match[1].toLowerCase();
+  const company = ctx.match[2].trim();
+  careerSrv.logCareer(chatId, today(), type, company);
+  
+  const goalCheck = goalsSrv.checkAndCompleteGoal(chatId, 'карьера', type);
+  if (goalCheck?.completed) {
+    ctx.reply(`💼 Записано: ${type} — ${company}\n\n🎉 ЦЕЛЬ ДОСТИГНУТА! ${type} — ${goalCheck.target} раз!`);
+  } else {
+    ctx.reply(`💼 Записано: ${type} — ${company}`);
+  }
+});
+
 // Команда для просмотра активных целей
 bot.command('goals', ctx => {
   const chatId = String(ctx.chat.id);
@@ -124,14 +175,15 @@ bot.command('goals', ctx => {
   let text = '🎯 Активные цели:\n\n';
   
   goals.forEach(goal => {
-    const current = goalsSrv.getGoalProgress(chatId, goal.activity);
+    const current = goalsSrv.getGoalProgress(chatId, goal.type, goal.activity);
     const percent = Math.min(Math.round((current / goal.target) * 100), 100);
     const filled = Math.round(percent / 10);
     const empty = 10 - filled;
     
     const bar = '█'.repeat(filled) + '░'.repeat(empty);
-    text += `${goal.activity}: ${bar} ${percent}%\n`;
-    text += `${current}/${goal.target} минут\n\n`;
+    const name = goal.activity || goal.type;
+    text += `${name}: ${bar} ${percent}%\n`;
+    text += `${current}/${goal.target} ${goal.type === 'активности' ? 'минут' : goal.type === 'калории' ? 'ккал' : 'раз'}\n\n`;
   });
   
   ctx.reply(text);
@@ -174,6 +226,9 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'));
 setInterval(() => {
   console.log('✅ Bot is alive:', new Date().toISOString());
 }, 300000); // каждые 5 минут
+
+
+
 
 
 
