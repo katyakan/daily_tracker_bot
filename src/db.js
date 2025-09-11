@@ -44,7 +44,10 @@ CREATE TABLE IF NOT EXISTS career (
   company TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS goals (
+-- Удаляем старую таблицу и создаём новую
+DROP TABLE IF EXISTS goals;
+
+CREATE TABLE goals (
   chat_id TEXT NOT NULL,
   type TEXT NOT NULL,
   activity TEXT NOT NULL,
@@ -57,6 +60,7 @@ CREATE TABLE IF NOT EXISTS goals (
 `);
 
 export default db;
+
 
 
 
