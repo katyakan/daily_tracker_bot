@@ -33,6 +33,12 @@ export function getGoalProgress(chatId, type, activity = '') {
         FROM calories WHERE chat_id = ? AND date >= ?
       `).get(chatId, goal.created_date).current;
       
+    case 'занятия': // Новый тип для сожжённых калорий
+      return db.prepare(`
+        SELECT COALESCE(SUM(burn), 0) as current
+        FROM calories WHERE chat_id = ? AND date >= ?
+      `).get(chatId, goal.created_date).current;
+      
     case 'активности':
       return db.prepare(`
         SELECT COALESCE(SUM(minutes), 0) as current
@@ -70,6 +76,8 @@ export function checkAndCompleteGoal(chatId, type, activity = '') {
   
   return { completed: false, target: goal.target, current };
 }
+
+
 
 
 
