@@ -110,7 +110,17 @@ bot.on('text', ctx => {
   ctx.reply('❓ Не понял команду. Попробуй:\n• "golang 30"\n• "калории 200"\n• "вес 55.5"\n\nИли /help для всех команд');
 });
 
-bot.launch().then(() => console.log('🚀 Bot started successfully'));
+bot.launch({ 
+  dropPendingUpdates: true 
+}).then(() => {
+  console.log('🚀 Bot started successfully');
+  console.log('📁 Database path:', process.env.DB_PATH || './data/tracker.db');
+});
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+// Добавь healthcheck для логов
+setInterval(() => {
+  console.log('✅ Bot is alive:', new Date().toISOString());
+}, 300000); // каждые 5 минут
