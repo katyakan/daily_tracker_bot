@@ -7,6 +7,7 @@ import * as caloriesSrv from './services/calories.js';
 import * as activitiesSrv from './services/activities.js';
 import * as weightSrv from './services/weight.js';
 import * as careerSrv from './services/career.js';
+import * as goalsSrv from './services/goals.js';
 
 import { dailyReport } from './reports/daily.js';
 import { weeklyReport } from './reports/weekly.js';
@@ -43,6 +44,10 @@ const HELP_TEXT = `
 /day — за сегодня
 /week — за неделю
 /month — за месяц
+
+🎯 Цели:
+• цель golang 100 — установить цель
+• goals — просмотр активных целей
 `;
 
 // Commands
@@ -79,12 +84,57 @@ bot.hears(/^\s*(отклик|ответ|собес)\s+(.+)$/i, ctx => {
   ctx.reply(`💼 Записано: ${type} — ${company}`);
 });
 
+// Парсер для целей: "цель golang 100"
+bot.hears(/^\s*цель\s+(\w+)\s+(\d+)\s*$/i, ctx => {
+  const chatId = String(ctx.chat.id);
+  const activity = ctx.match[1].toLowerCase();
+  const target = Number(ctx.match[2]);
+  
+  goalsSrv.setGoal(chatId, activity, target);
+  ctx.reply(`🎯 Новая цель: ${activity} — ${target} минут`);
+});
+
+// Обновляем парсер активностей - проверяем цели
 bot.hears(/^\s*(\w+)\s+(\d+)\s*$/i, ctx => {
   const chatId = String(ctx.chat.id);
   const activity = ctx.match[1];
   const minutes = Number(ctx.match[2]);
+  
   activitiesSrv.logActivity(chatId, today(), activity, minutes);
-  ctx.reply(`📚 Записано: ${activity} — ${minutes} минут`);
+  
+  // Проверяем цель
+  const goalCheck = goalsSrv.checkAndCompleteGoal(chatId, activity.toLowerCase());
+  
+  if (goalCheck?.completed) {
+    ctx.reply(`📚 Записано: ${activity} — ${minutes} минут\n\n🎉 ЦЕЛЬ ДОСТИГНУТА! ${activity} — ${goalCheck.target} минут выполнено!`);
+  } else {
+    ctx.reply(`📚 Записано: ${activity} — ${minutes} минут`);
+  }
+});
+
+// Команда для просмотра активных целей
+bot.command('goals', ctx => {
+  const chatId = String(ctx.chat.id);
+  const goals = goalsSrv.getActiveGoals(chatId);
+  
+  if (!goals.length) {
+    return ctx.reply('🎯 Нет активных целей. Установи: "цель golang 100"');
+  }
+  
+  let text = '🎯 Активные цели:\n\n';
+  
+  goals.forEach(goal => {
+    const current = goalsSrv.getGoalProgress(chatId, goal.activity);
+    const percent = Math.min(Math.round((current / goal.target) * 100), 100);
+    const filled = Math.round(percent / 10);
+    const empty = 10 - filled;
+    
+    const bar = '█'.repeat(filled) + '░'.repeat(empty);
+    text += `${goal.activity}: ${bar} ${percent}%\n`;
+    text += `${current}/${goal.target} минут\n\n`;
+  });
+  
+  ctx.reply(text);
 });
 
 // Reports
@@ -124,3 +174,6 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'));
 setInterval(() => {
   console.log('✅ Bot is alive:', new Date().toISOString());
 }, 300000); // каждые 5 минут
+
+
+

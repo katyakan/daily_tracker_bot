@@ -43,7 +43,18 @@ CREATE TABLE IF NOT EXISTS career (
   type TEXT NOT NULL,
   company TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS goals (
+  chat_id TEXT NOT NULL,
+  activity TEXT NOT NULL,
+  target INTEGER NOT NULL,
+  created_date TEXT NOT NULL,
+  completed INTEGER DEFAULT 0,
+  completed_date TEXT,
+  PRIMARY KEY (chat_id, activity)
+);
 `);
 
 export default db;
+
 
